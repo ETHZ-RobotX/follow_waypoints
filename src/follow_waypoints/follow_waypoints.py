@@ -45,7 +45,7 @@ waypoints = []
 class FollowPath(State):
     def __init__(self):
         State.__init__(self, outcomes=['success'], input_keys=['waypoints'])
-        self.frame_id = rospy.get_param('~goal_frame_id','map')
+        self.frame_id = rospy.get_param('~goal_frame_id','tracking_camera_odom')
         self.odom_frame_id = rospy.get_param('~odom_frame_id','odom')
         self.base_frame_id = rospy.get_param('~base_frame_id','base_footprint')
         self.duration = rospy.get_param('~wait_duration', 0.0)
@@ -93,7 +93,7 @@ class FollowPath(State):
 def convert_PoseWithCovArray_to_PoseArray(waypoints):
     """Used to publish waypoints as pose array so that you can see them in rviz, etc."""
     poses = PoseArray()
-    poses.header.frame_id = rospy.get_param('~goal_frame_id','map')
+    poses.header.frame_id = rospy.get_param('~goal_frame_id','tracking_camera_odom')
     poses.poses = [pose.pose.pose for pose in waypoints]
     return poses
 
@@ -141,7 +141,8 @@ class GetPath(State):
             with open(output_file_path, 'w') as file:
                 for current_pose in waypoints:
                     file.write(str(current_pose.pose.pose.position.x) + ',' + str(current_pose.pose.pose.position.y) + ',' + str(current_pose.pose.pose.position.z) + ',' + str(current_pose.pose.pose.orientation.x) + ',' + str(current_pose.pose.pose.orientation.y) + ',' + str(current_pose.pose.pose.orientation.z) + ',' + str(current_pose.pose.pose.orientation.w)+ '\n')
-	        rospy.loginfo('poses written to '+ output_file_path)	
+	        
+            rospy.loginfo('poses written to '+ output_file_path)
         ready_thread = threading.Thread(target=wait_for_path_ready)
         ready_thread.start()
 
@@ -156,7 +157,7 @@ class GetPath(State):
             with open(output_file_path, 'r') as file:
                 reader = csv.reader(file, delimiter = ',')
                 for row in reader:
-                    print row
+                    print (row)
                     current_pose = PoseWithCovarianceStamped() 
                     current_pose.pose.pose.position.x     =    float(row[0])
                     current_pose.pose.pose.position.y     =    float(row[1])
@@ -169,10 +170,9 @@ class GetPath(State):
                     self.poseArray_publisher.publish(convert_PoseWithCovArray_to_PoseArray(waypoints))
             self.start_journey_bool = True
             
-            
+
         start_journey_thread = threading.Thread(target=wait_for_start_journey)
         start_journey_thread.start()
-
         topic = self.addpose_topic;
         rospy.loginfo("Waiting to recieve waypoints via Pose msg on topic %s" % topic)
         rospy.loginfo("To start following waypoints: 'rostopic pub /path_ready std_msgs/Empty -1'")
@@ -183,18 +183,21 @@ class GetPath(State):
         # Wait for published waypoints or saved path  loaded
         while (not self.path_ready and not self.start_journey_bool):
             try:
-                pose = rospy.wait_for_message(topic, PoseWithCovarianceStamped, timeout=1)
+                pose = rospy.wait_for_message(topic, PoseWithCovarianceStamped, timeout=10)
             except rospy.ROSException as e:
-                if 'timeout exceeded' in e.message:
+                if 'timeout' in str(e):
                     continue  # no new waypoint within timeout, looping...
                 else:
                     raise e
             rospy.loginfo("Recieved new waypoint")
-            waypoints.append(changePose(pose, "map"))
+            waypoints.append(changePose(pose, "tracking_camera_odom"))
             # publish waypoint queue as pose array so that you can see them in rviz, etc.
             self.poseArray_publisher.publish(convert_PoseWithCovArray_to_PoseArray(waypoints))
+            # rospy.loginfo("not ready yet")
 
         # Path is ready! return success and move on to the next state (FOLLOW_PATH)
+        
+        # rospy.loginfo("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
         return 'success'
 
 class PathComplete(State):
