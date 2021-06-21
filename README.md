@@ -7,7 +7,7 @@ A package that will buffer `move_base` goals until instructed to navigate to all
 ## Installation
 
 ```
-  $ sudo apt-get install ros-kinetic-follow-waypoints
+git clone and catkin build 
 ```
 
 **Documentation on wiki: [http://wiki.ros.org/follow_waypoints](http://wiki.ros.org/follow_waypoints)**
