@@ -7,7 +7,8 @@ A package that will buffer `move_base` goals until instructed to navigate to all
 ## Installation
 
 ```
-git clone and catkin build 
+git clone https://github.com/ETHZ-RobotX/follow_waypoints.git
+catkin build follow_waypoints
 ```
 
 **Documentation on wiki: [http://wiki.ros.org/follow_waypoints](http://wiki.ros.org/follow_waypoints)**
